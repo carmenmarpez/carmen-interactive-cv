@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 
+    Chosen Palette: Warm Neutrals (bg-stone-100, text-stone-800, accent-rose-700)
+    Application Structure Plan: The SPA is designed as an interactive portfolio to transform the static CV into an engaging user experience, ideal for showcasing a Product Owner profile. The structure is:
+    1.  Sticky Header Nav: For easy navigation to key sections (Highlights, Experience, Skills).
+    2.  Hero Section: Introduces Carmen with her 'Product Owner' headline and the Professional Summary.
+    3.  Highlights Section: Presents the 'Key Achievements & Value Proposition' as a 6-card grid. This makes the core competencies immediately scannable and visually distinct, far more than a bullet list.
+    4.  Interactive Career Journey: This is the core interactive element. The full 20+ year job history is presented as a clean, clickable timeline of buttons. Clicking a button dynamically loads that specific job's details into a display card below. This solves the problem of a CV's "wall of text" and allows a hiring manager to easily explore relevant roles (like the recent PO/PM roles) without being overwhelmed.
+    5.  Skills & Qualifications Section: Visually separates Certifications (as "badges"), Education, and Languages for clarity and proof.
+    This structure was chosen to guide the user (e.g., a hiring manager at Roche) from a high-level summary, through scannable key strengths, into a deep, interactive dive of the career history, and finally to the supporting qualifications.
+
+    Visualization & Content Choices:
+    1.  Report Info: Key Achievements & Value Prop -> Goal: Organize, Inform (key skills/value) -> Viz/Method: 6-card grid (HTML/Tailwind CSS) with Unicode icons. -> Interaction: Hover effects. -> Justification: More visual and scannable than a bullet list.
+    2.  Report Info: Job History (20+ years of roles) -> Goal: Organize, Explore (career progression) -> Viz/Method: Interactive HTML/CSS/JS Timeline. A flex-wrap container of buttons, each representing a job. A separate 'div' displays details for the selected job. -> Interaction: `onclick` on a timeline button calls a JS function to update the content of the display 'div'. -> Justification: Makes a very long career history digestible and explorable. Focuses user attention on one role at a time. Defaults to showing the most recent, most relevant role. -> Library: Vanilla JS.
+    3.  Report Info: Certifications -> Goal: Inform (proof of skills) -> Viz/Method: Grid of "badges" (styled divs). -> Interaction: None. -> Justification: More visually appealing than a list; highlights key certs.
+    4.  Report Info: Education, Languages -> Goal: Inform -> Viz/Method: Simple styled lists. -> Interaction: None. -> Justification: Standard, clear.
+    
+    CONFIRMATION: NO SVG graphics used. NO Mermaid JS used.
+    -->
+    <title>Carmen Martinez - Product Owner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .timeline-nav {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            padding: 0.5rem;
+            background-color: #f5f5f4; /* stone-100 */
+            border-radius: 0.75rem; /* rounded-xl */
+        }
+        .timeline-button {
+            background-color: #e7e5e4; /* stone-200 */
+            border: 2px solid transparent;
+            padding: 0.5rem 1rem;
+            margin: 0.375rem;
+            border-radius: 9999px; /* rounded-full */
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 600; /* font-semibold */
+            color: #57534e; /* stone-600 */
+            flex-shrink: 0;
+        }
+        .timeline-button:hover {
+            background-color: #d6d3d1; /* stone-300 */
+            transform: translateY(-2px);
+        }
+        .timeline-button.active {
+            background-color: #be185d; /* pink-700 */
+            color: #ffffff; /* white */
+            border-color: #ec4899; /* pink-400 */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        #job-details {
+            background-color: #ffffff;
+            border-radius: 0.75rem; /* rounded-xl */
+            padding: 1.5rem; /* p-6 */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
+            min-height: 350px;
+            transition: all 0.3s ease-in-out;
+        }
+        #job-details h3 {
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 700; /* font-bold */
+            color: #1c1917; /* stone-900 */
+        }
+        #job-details h4 {
+            font-size: 1rem; /* text-base */
+            font-weight: 600; /* font-semibold */
+            color: #be185d; /* pink-700 */
+            margin-bottom: 0.5rem; /* mb-2 */
+        }
+        #job-details p {
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 500; /* font-medium */
+            color: #78716c; /* stone-500 */
+            margin-bottom: 1rem; /* mb-4 */
+        }
+        #job-details ul {
+            list-style-type: disc;
+            padding-left: 1.25rem; /* pl-5 */
+            margin-top: 0.5rem; /* mt-2 */
+            color: #44403c; /* stone-700 */
+        }
+         #job-details li {
+            margin-bottom: 0.5rem; /* mb-2 */
+            line-height: 1.6;
+        }
+        .highlight-card {
+            background-color: white;
+            border-radius: 0.75rem; /* rounded-xl */
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+            transition: all 0.2s ease-in-out;
+            border: 1px solid #e7e5e4; /* stone-200 */
+        }
+        .highlight-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
+        }
+        .highlight-icon {
+            font-size: 2rem;
+            line-height: 1;
+        }
+        .cert-badge {
+            background-color: #fafaf9; /* stone-50 */
+            border: 1px solid #d6d3d1; /* stone-300 */
+            border-radius: 0.5rem; /* rounded-lg */
+            padding: 1rem;
+            text-align: center;
+            font-weight: 600;
+            color: #44403c; /* stone-700 */
+            transition: all 0.2s ease-in-out;
+        }
+        .cert-badge:hover {
+             transform: scale(1.05);
+        }
+        .cert-badge.primary {
+            background-color: #fff1f2; /* rose-50 */
+            border-color: #fda4af; /* rose-300 */
+            color: #9f1239; /* rose-800 */
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+
+    <header class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <nav class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex-shrink-0">
+                    <span class="text-xl font-bold text-stone-900">Carmen Martinez</span>
+                    <span class="text-xl font-semibold text-pink-700">Product Owner</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#home" class="text-stone-600 hover:text-pink-700 px-3 py-2 rounded-md text-sm font-medium">Home</a>
+                        <a href="#highlights" class="text-stone-600 hover:text-pink-700 px-3 py-2 rounded-md text-sm font-medium">Highlights</a>
+                        <a href="#experience" class="text-stone-600 hover:text-pink-700 px-3 py-2 rounded-md text-sm font-medium">Experience</a>
+                        <a href="#skills" class="text-stone-600 hover:text-pink-700 px-3 py-2 rounded-md text-sm font-medium">Skills & Certs</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+
+        <section id="home" class="pt-16 pb-24">
+            <div class="text-center">
+                <h1 class="text-4xl font-extrabold text-stone-900 sm:text-5xl md:text-6xl">
+                    Carmen Martínez López
+                </h1>
+                <h2 class="mt-3 text-2xl font-semibold text-pink-700 sm:text-3xl md:text-4xl">
+                    Product Owner
+                </h2>
+                <p class="mt-6 max-w-3xl mx-auto text-lg text-stone-600 leading-relaxed">
+                    Highly accomplished, certified IT Product Owner with over 5 years of experience at Roche driving digital workplace transformation and employee IT experience. Currently spearheading the <b>Voice of Customer – Technical Experience (VoC TechX)</b> initiative, monitoring the technological interactions of <b>100,000+ employees</b> to generate actionable, data-driven insights for RDT (Roche Digital Technology) strategy.
+                </p>
+                <p class="mt-4 max-w-3xl mx-auto text-lg text-stone-600 leading-relaxed">
+                    Proven ability to step into complex a.i. Product Manager roles, leading cross-functional teams, defining strategic roadmaps, and delivering high-impact solutions that measurably enhance user satisfaction, productivity, and digital solution adoption.
+                </p>
+                <div class="mt-8 flex justify-center space-x-6 text-stone-500">
+                    <span>carmenmar.pez@gmail.com</span>
+                    <span>|</span>
+                    <span>+34 677401693</span>
+                    <span>|</span>
+                    <span>Spain (Fully Remote/Hybrid/Madrid/Valencia)</span>
+                </div>
+            </div>
+        </section>
+
+        <section id="highlights" class="py-16">
+            <h2 class="text-3xl font-bold text-center text-stone-900 mb-4">Key Achievements & Value Proposition</h2>
+            <p class="text-center text-lg text-stone-600 mb-12 max-w-2xl mx-auto">
+                A snapshot of my core competencies as a Product Owner, demonstrated through proven achievements.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                
+                <div class="highlight-card">
+                    <span class="highlight-icon" role="img" aria-label="Agile icon">🚀</span>
+                    <h3 class="text-xl font-bold mt-4 mb-2">Agile Product Leadership</h3>
+                    <p class="text-stone-600">Certified SAFe 6 Agile PM and PSPO I. Successfully managed the <b>Workforce Experience Product</b> backlog and strategy (VoC TechX), evolving the yearly IT Satisfaction Survey into a continuous listening feedback model.</p>
+                </div>
+
+                <div class="highlight-card">
+                    <span class="highlight-icon" role="img" aria-label="Strategy icon">🎯</span>
+                    <h3 class="text-xl font-bold mt-4 mb-2">Strategic Product Ownership</h3>
+                    <p class="text-stone-600">Assumed the a.i. Product Manager role for <b>Digital Employee Experience (DEX)</b> with high impact. <b>Took decisive actions</b> and proactively established a <b>tangible Roadmap</b>, ensuring business continuity and strategic progression.</p>
+                </div>
+
+                <div class="highlight-card">
+                    <span class="highlight-icon" role="img" aria-label="Voice of Customer icon">🗣️</span>
+                    <h3 class="text-xl font-bold mt-4 mb-2">VoC & Data-Driven Delivery</h3>
+                    <p class="text-stone-600">Led the VoC TechX initiative, collaborating with global teams to transform raw feedback into data-driven insights. Experience in leveraging user needs (VoC) and stakeholder goals to maximize value delivery.</p>
+                </div>
+
+                <div class="highlight-card">
+                    <span class="highlight-icon" role="img"aria-label="Collaboration icon">👥</span>
+                    <h3 class="text-xl font-bold mt-4 mb-2">Stakeholder & Team Collaboration</h3>
+                    <p class="text-stone-600">Praised as a great partner for engaging global stakeholders (i.e. China Digital Employee Experience). <b>Fostered a collaborative team environment</b> and significantly improved <b>PI Planning</b> preparations.</p>
+                </div>
+
+                <div class="highlight-card">
+                    <span class="highlight-icon" role="img" aria-label="Governance icon">🛡️</span>
+                    <h3 class="text-xl font-bold mt-4 mb-2">Project & Service Governance</h3>
+                    <p class="text-stone-600">Pivotal role in large-scale upgrade projects (Virtual Events, Video Portal), including <b>managing RFI/RFP</b>, test/verification of requirements, compliance assurance, and designing <b>service governance</b> and adoption plans.</p>
+                </div>
+
+                <div class="highlight-card">
+                    <span class="highlight-icon" role="img" aria-label="User Experience icon">🎨</span>
+                    <h3 class="text-xl font-bold mt-4 mb-2">User Experience (UX) & Adoption</h3>
+                    <p class="text-stone-600">Designed and managed the <b>Digital Media and Events website (Google Site)</b> and the new <b>visual identity and templates</b> for global webcasts after Roche's re-branding, directly supporting global team adoption.</p>
+                </div>
+
+            </div>
+        </section>
+
+        <section id="experience" class="py-16">
+            <h2 class="text-3xl font-bold text-center text-stone-900 mb-4">Interactive Career Journey</h2>
+            <p class="text-center text-lg text-stone-600 mb-12 max-w-3xl mx-auto">
+                Explore my 20+ year career. Click any role on the timeline to see my key responsibilities and achievements for that position. The journey begins with my most recent role.
+            </p>
+            
+            <div id="timeline-navigation" class="timeline-nav">
+            </div>
+
+            <div id="job-details" class="mt-6">
+            </div>
+        </section>
+
+        <section id="skills" class="py-16">
+            <h2 class="text-3xl font-bold text-center text-stone-900 mb-12">Skills & Qualifications</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                
+                <div>
+                    <h3 class="text-2xl font-bold text-stone-800 mb-6 flex items-center">
+                        <span class="text-2xl mr-3" role="img" aria-label="Certificate icon">🏆</span>
+                        Professional Certifications
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="cert-badge primary">Certified SAFe 6 Agile PM</div>
+                        <div class="cert-badge primary">Professional Scrum PO I (PSPO I)</div>
+                        <div class="cert-badge primary">ITIL 4 Foundation</div>
+                        <div class="cert-badge primary">CTS - Certified Technology Specialist</div>
+                        <div class="cert-badge primary">PRINCE 2 Foundation</div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold text-stone-800 mb-6 flex items-center">
+                        <span class="text-2xl mr-3" role="img" aria-label="Education icon">🎓</span>
+                        Education
+                    </h3>
+                    <ul class="space-y-3">
+                        <li class="text-stone-700"><strong class="text-stone-900">Master's in Arts Management</strong> - University of Valencia</li>
+                        <li class="text-stone-700"><strong class="text-stone-900">Bachelor's in Humanities</strong> - University of Valencia</li>
+                        <li class="text-stone-700"><strong class="text-stone-900">Bachelor's in Audio Visual Communication</strong> - CEU / Polytechnic University Valencia</li>
+                    </ul>
+
+                    <h3 class="text-2xl font-bold text-stone-800 mt-10 mb-6 flex items-center">
+                        <span class="text-2xl mr-3" role="img" aria-label="Languages icon">🌍</span>
+                        Languages
+                    </h3>
+                    <ul class="space-y-3">
+                        <li class="text-stone-700"><strong class="text-stone-900">English:</strong> Fluent (C2)</li>
+                        <li class="text-stone-700"><strong class="text-stone-900">Spanish:</strong> Native</li>
+                        <li class="text-stone-700"><strong class="text-stone-900">French:</strong> Basic (B1)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-stone-800 text-stone-300 py-12">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h3 class="text-2xl font-bold text-white mb-4">Let's Connect</h3>
+            <p class="text-lg text-stone-400 mb-6">Open to discussing new opportunities in Product Management and digital transformation.</p>
+            <div class="flex justify-center items-center space-x-6">
+                <span>carmenmar.pez@gmail.com</span>
+                <span>|</span>
+                <span>+34 677401693</span>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            const jobData = [
+                {
+                    title: "Product Owner (VoC TechX)",
+                    company: "Roche",
+                    location: "Spain (Fully Remote)",
+                    dates: "Jan 2025 – Present (9 months)",
+                    description: `
+                        <ul>
+                            <li>Currently serving as the IT Product Owner for the Voice of Customer Technical Experience (VoC TechX) within the Workforce Experience Product, Roche RDT (formerly known as Roche Informatics) focusing on continuous digital improvement.</li>
+                            <li>Driving the evolution of the yearly IT Satisfaction Survey into a <b>continuous listening feedback model</b>, providing a steady stream of data-driven insights for RDT teams to act upon.</li>
+                        </ul>`
+                },
+                {
+                    title: "a.i. Product Manager (Digital Employee Experience)",
+                    company: "Roche",
+                    location: "Spain (Fully Remote)",
+                    dates: "Jun 2024 – Dec 2024 (6 months)",
+                    description: `
+                        <ul>
+                            <li><b>Strategic Roadmap:</b> Proactively drove the creation of a <b>tangible Product Roadmap</b> and defined clear Objectives and Key Results (OKRs), ensuring strategic clarity and execution in a complex Digital Employee Experience (DEX) domain, in Roche Informatics.</li>
+                            <li><b>Business Continuity & Leadership:</b> Maintained business continuity and drove key topics forward during a full-time Product Manager sabbatical, demonstrating rapid adaptation, self-starter capabilities, and strategic vision.</li>
+                            <li><b>Agile Execution:</b> Significantly improved <b>PI Planning preparations</b> and led efforts to facilitate global collaboration, including support for the China Digital Employee Experience strategy.</li>
+                            <li><b>Impact:</b> Successfully set and achieved objectives for key initiatives, including Bookly, Menu Plans, and Appspace migration, resulting in measured progress across the Connected Employees Product Line.</li>
+                        </ul>`
+                },
+                {
+                    title: "Communications and Collaboration Service IT Support Specialist",
+                    company: "Roche",
+                    location: "Spain (Madrid/Hybrid)",
+                    dates: "Apr 2020 – Jun 2024 (4 years 2 months)",
+                    description: `
+                        <ul>
+                            <li><b>Service Design & Governance:</b> Played a pivotal role in the upgrade projects for Virtual Events and Video Portal Platforms, utilizing Agile/Scrum and successfully managing <b>RFI/RFP processes</b>, verifying requirements, and designing robust service governance and adoption plans.</li>
+                            <li><b>Stakeholder Consultancy:</b> Provided expert consultancy on virtual meetings and collaboration technologies, guiding Roche teams globally on platform selection and fulfilling communication needs to ensure the successful delivery of numerous virtual and hybrid live events.</li>
+                            <li><b>Product Marketing & Adoption:</b> Designed and implemented the <b>new visual identity and style guides</b> for global webcasts after Roche’s re-branding, directly facilitating team and global adoption of the new digital media service.</li>
+                            <li><b>Continuous Improvement:</b> Actively engaged in R&D projects, exploring new product features, establishing business relationships with vendors, and managing the Roche Streaming & Video Portal to drive continuous user experience improvement.</li>
+                        </ul>`
+                },
+                {
+                    title: "Senior Audio Visual Specialist",
+                    company: "The Guardian News and Media",
+                    location: "London, United Kingdom",
+                    dates: "May 2018 – Feb 2020 (1 year 9 months)",
+                    description: `
+                        <ul>
+                            <li><b>Needs Analysis & Delivery:</b> Managed the planning and implementation of system upgrades, including conducting <b>needs analysis</b> and liaising with vendors to design, PoC (Proof of Concept), and roll out AV infrastructure upgrades (e.g., meeting room refurbishments, deployment of new Digital Signage systems).</li>
+                            <li><b>Service Documentation:</b> Developed and maintained a knowledge base of documented <b>Standard Operating Procedures (SOPs)</b> and best practices for AV and Cisco VC facilities, improving self-service and reducing service desk reliance.</li>
+                        </ul>`
+                },
+                {
+                    title: "On-Site AV & VC Technician (Estée Lauder)",
+                    company: "proAV Limited",
+                    location: "London, United Kingdom",
+                    dates: "Mar 2018 – May 2018 (2 months)",
+                    description: `
+                        <p>Part of the AV Team responsible for the entire audiovisual facilities at the London head office. Managed fault handling via Service Now, monitored complex digital signage (Samsung Magic Info), and documented all AV procedures and processes using Office 365 collaboration tools.</p>`
+                },
+                {
+                    title: "On-Site AV & VC Technician (BDO LLP)",
+                    company: "proAV Limited",
+                    location: "London, United Kingdom",
+                    dates: "Jul 2015 – Feb 2018 (2 years 7 months)",
+                    description: `
+                        <ul>
+                            <li><b>UX Improvement:</b> Acquired knowledge in <b>booking system administration</b>; leveraged the Condeco software upgrade to design and implement a new scope for the AV vendor, directly upgrading AV booking capabilities and significantly <b>improving the end user experience</b>.</li>
+                            <li><b>Service Optimization:</b> Produced comprehensive <b>SOPs</b> to compile all administrative processes and technical procedures, highly enhancing service management and user experience across 40 meeting rooms and event spaces.</li>
+                            <li><b>Team Leadership:</b> Developed team leadership skills by building and managing the client’s team of AV assistants, allocating daily tasks, and designing training programs to ensure optimal performance and service provision.</li>
+                        </ul>`
+                },
+                {
+                    title: "Audio Visual Officer",
+                    company: "Eurojust (The European Union's Judicial Cooperation Unit)",
+                    location: "The Hague, Netherlands",
+                    dates: "Sep 2013 – Dec 2013 (3 months)",
+                    description: `
+                        <ul>
+                            <li><b>Service Management:</b> Managed the full Audio-Visual Support Service (technical, operational, and administrative), ensuring the conference system (cameras, interpretation booths) was fully operational and coordinating VC calls for high-profile meetings.</li>
+                            <li><b>Communication & Adoption:</b> Initiated a <b>communication plan</b> to promote the use of Video Conferencing (VC) within the organization, leading to greater adoption and efficiency in inter-agency cooperation.</li>
+                        </ul>`
+                },
+                {
+                    title: "Audio Visual Technician (Multi-Role)",
+                    company: "Canal 9 RTVV",
+                    location: "Valencia, Spain",
+                    dates: "1998 – 2013 (Across multiple periods)",
+                    description: `
+                        <p>Selected relevant experience from a 10+ year tenure:</p>
+                        <ul>
+                            <li><b>Process & Quality Control:</b> As Master Control Room Operator, was responsible for preparing and managing programming for playout, ensuring all transmissions met strict technical and content regulations, showcasing acute attention to detail and robust process adherence.</li>
+                            <li><b>Mentoring & Training:</b> Provided continuous training and mentoring to new starters from internship and work placement programs, demonstrating a core skill of knowledge transfer vital for Product Owners in driving team capability.</li>
+                            <li><b>Decisive Execution:</b> Operated under strong pressure in live entertainment and news work, demonstrating the maturity and decisive action-taking ability required to ensure successful on-air product delivery to tight deadlines.</li>
+                        </ul>`
+                },
+                {
+                    title: "Production Assistant",
+                    company: "Parafina Producciones SL",
+                    location: "Valencia, Spain",
+                    dates: "Oct 1999 – Jul 2000 (9 months)",
+                    description: `
+                        <ul>
+                            <li><b>Project Launch & Resource Management:</b> Led the setup of a daily TV show production office from scratch, including liaising with all suppliers, managing resources (AV consumables, stationery), and handling budgeting and administrative books.</li>
+                            <li><b>Technical Team Leadership:</b> Led the technical team, distributing workload and allocating resources to camera operators and video editors to ensure the smooth execution of the daily production process.</li>
+                        </ul>`
+                },
+                {
+                    title: "Audio Visual Technician",
+                    company: "Tyrannosaurus Producciones SA",
+                    location: "Valencia, Spain",
+                    dates: "Jan 1996 – Jan 1998 (2 years)",
+                    description: `<p>Acquired solid hands-on foundational experience in the AV field by working on the production of a variety of stop-motion cartoon series. Tasks included on-set lighting, camera operation, video recording, and equipment maintenance.</p>`
+                }
+            ];
+
+            const timelineNav = document.getElementById('timeline-navigation');
+            const jobDetails = document.getElementById('job-details');
+            let timelineButtons = [];
+
+            function displayJob(index) {
+                const job = jobData[index];
+                if (!job) return;
+
+                jobDetails.innerHTML = `
+                    <h3>${job.title}</h3>
+                    <h4>${job.company}</h4>
+                    <p class="font-semibold text-stone-700">${job.location}</p>
+                    <p class="font-mono text-sm text-stone-500">${job.dates}</p>
+                    <div>${job.description}</div>
+                `;
+                
+                timelineButtons.forEach((button, i) => {
+                    if (i === index) {
+                        button.classList.add('active');
+                    } else {
+                        button.classList.remove('active');
+                    }
+                });
+            }
+
+            jobData.forEach((job, index) => {
+                const button = document.createElement('button');
+                button.className = 'timeline-button';
+                button.textContent = job.title.split('(')[0].trim();
+                button.onclick = () => displayJob(index);
+                timelineNav.appendChild(button);
+                timelineButtons.push(button);
+            });
+
+            displayJob(0);
+
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
